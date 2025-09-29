@@ -2,12 +2,9 @@
 using Azure.AI.OpenAI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using System.Net;
 
 namespace AzureOpenAI
 {
@@ -19,8 +16,7 @@ namespace AzureOpenAI
             IConfiguration _configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .AddUserSecrets<Program>()
+                 .AddUserSecrets<Program>()
                 .Build();
 
             var endpoint = _configuration["AzureOpenAI:Endpoint"];
