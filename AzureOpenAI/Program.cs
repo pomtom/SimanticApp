@@ -44,6 +44,11 @@ namespace AzureOpenAI
                 MaxTokens = 1500,
             };
 
+            foreach (var attr in chatCompletionService.Attributes)
+            {
+                Console.WriteLine($"{attr.Key} \t \t {attr.Value}");
+            }
+
             // Create a chat history truncation reducer
             var reducer = new ChatHistoryTruncationReducer(targetCount: 10);
             // var reducer = new ChatHistorySummarizationReducer(chatCompletionService, 2, 2);
