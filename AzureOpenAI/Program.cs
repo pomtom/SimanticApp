@@ -44,6 +44,7 @@ namespace AzureOpenAI
                 MaxTokens = 1500,
             };
 
+            // Display model and service information
             foreach (var attr in chatCompletionService.Attributes)
             {
                 Console.WriteLine($"{attr.Key} \t \t {attr.Value}");
