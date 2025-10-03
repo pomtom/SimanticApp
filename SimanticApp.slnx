@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="AiInferencing/AiInferencing.csproj" Id="d461246b-843c-4d53-aeb6-82cdf5515007" />
   <Project Path="AzureOpenAI/AzureOpenAI.csproj" />
   <Project Path="OPenAIApp/OpenAIApp.csproj" Id="c3438417-ccd1-4395-9003-4f72499dd688" />
 </Solution>
