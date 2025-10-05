@@ -17,9 +17,9 @@ namespace AiInferencing
                  .AddUserSecrets<Program>()
                 .Build();
 
-            var apiKey = _configuration["OpenAI:ApiKey"];
-            var modelId = _configuration["OpenAI:ModelId"];
-            var endpoint = _configuration["OpenAI:Endpoint"];
+            var apiKey = _configuration["AiInferencing:ApiKey"];
+            var modelId = _configuration["AiInferencing:ModelId"];
+            var endpoint = _configuration["AiInferencing:Endpoint"];
 
             // Create a kernel builder and add Azure OpenAI chat completion service
             var builder = Kernel.CreateBuilder();
@@ -63,7 +63,6 @@ namespace AiInferencing
                     break;
 
                 string fullMessage = "";
-                OpenAI.Chat.ChatTokenUsage usage = null;
 
                 history.AddUserMessage(prompt);
                 // Get streaming response from chat completion service
@@ -72,21 +71,11 @@ namespace AiInferencing
                     // Print response to console
                     Console.Write(responseChunk.Content);
                     fullMessage += responseChunk.Content;
-                    usage = ((OpenAI.Chat.StreamingChatCompletionUpdate)responseChunk.InnerContent).Usage;
                 }
                 // Add response to chat history
                 history.AddAssistantMessage(fullMessage);
 
-
-                //get non-streaming result from chat completion setvice
-                //var response = await chatCompletionService.GetChatMessageContentAsync(history, settings);
-                //add response to chat history
-                //history.Add(response);
-
-                // Display number of tokens used (model specific)
-                Console.WriteLine($"\n\tInput Tokens: \t{usage?.InputTokenCount}");
-                Console.WriteLine($"\tOutput Tokens: \t{usage?.OutputTokenCount}");
-                Console.WriteLine($"\tTotal Tokens: \t{usage?.TotalTokenCount}");
+                Console.WriteLine(); // Add a newline after the response
 
                 // Reduce chat history if necessary
                 var reduceMessages = await reducer.ReduceAsync(history);
