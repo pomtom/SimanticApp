@@ -2,5 +2,6 @@
   <Project Path="AiInferencing/AiInferencing.csproj" Id="d461246b-843c-4d53-aeb6-82cdf5515007" />
   <Project Path="AzureOpenAI/AzureOpenAI.csproj" />
   <Project Path="HuggingFace/HuggingFace.csproj" Id="d512ec08-e3b6-426c-a1e7-f74cdeaa86a1" />
+  <Project Path="Ollama/Ollama.csproj" Id="f8430ae8-e8d5-481c-90db-76e88f356c0c" />
   <Project Path="OPenAIApp/OpenAIApp.csproj" Id="c3438417-ccd1-4395-9003-4f72499dd688" />
 </Solution>
