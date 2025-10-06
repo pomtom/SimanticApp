@@ -11,9 +11,9 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        // Set console encoding to support Unicode characters
-        Console.OutputEncoding = Encoding.UTF8;
-        Console.InputEncoding = Encoding.UTF8;
+        // Set console encoding to ASCII
+        Console.OutputEncoding = Encoding.ASCII;
+        Console.InputEncoding = Encoding.ASCII;
         try
         {
             // Build host with dependency injection
@@ -43,10 +43,29 @@ internal class Program
             {
                 logging.ClearProviders();
                 logging.AddConsole();
-                logging.SetMinimumLevel(LogLevel.Information);
-                // Reduce noise from HTTP client and other internal logs
-                logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
-                logging.AddFilter("Microsoft.Extensions.Http", LogLevel.Warning);
+                logging.SetMinimumLevel(LogLevel.Error); // Only show errors by default
+                
+                // Allow only specific application logs (ChatApplication only)
+                logging.AddFilter("Simantic.ChatAI.ChatApplication", LogLevel.Information);
+                
+                // Suppress ALL other application components
+                logging.AddFilter("Simantic.ChatAI.Providers", LogLevel.None);
+                logging.AddFilter("Simantic.ChatAI.Services", LogLevel.None);
+                logging.AddFilter("Simantic.ChatAI.Configuration", LogLevel.None);
+                
+                // Suppress all Microsoft and System logs
+                logging.AddFilter("Microsoft", LogLevel.None);
+                logging.AddFilter("System", LogLevel.None);
+                logging.AddFilter("Azure", LogLevel.None);
+                
+                // Suppress specific noisy components
+                logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
+                logging.AddFilter("Microsoft.Extensions.Http", LogLevel.None);
+                logging.AddFilter("Microsoft.Extensions.Hosting", LogLevel.None);
+                logging.AddFilter("Microsoft.Extensions.DependencyInjection", LogLevel.None);
+                logging.AddFilter("Microsoft.SemanticKernel", LogLevel.None);
+                logging.AddFilter("Azure.Core", LogLevel.None);
+                logging.AddFilter("Azure.AI", LogLevel.None);
             })
             .ConfigureServices((context, services) =>
             {
@@ -90,7 +109,7 @@ public class ChatApplication
     }
     private void DisplayWelcomeMessage()
     {
-        Console.WriteLine("🤖 Welcome to Simantic.ChatAI - Unified LLM Provider Interface");
+        Console.WriteLine("[AI] Welcome to Simantic.ChatAI - Unified LLM Provider Interface");
         Console.WriteLine("================================================================");
         Console.WriteLine();
         Console.WriteLine($"Current Provider: {_chatService.CurrentProvider}");
@@ -122,7 +141,7 @@ public class ChatApplication
             var current = provider.Id.Equals(_chatService.CurrentProvider, StringComparison.OrdinalIgnoreCase) ? " <- CURRENT" : "";
             
             // Display provider name and ID with padding
-            Console.Write($"  • {provider.DisplayName,-20} ({provider.Id,-15}) ");
+            Console.Write($"  - {provider.DisplayName,-20} ({provider.Id,-15}) ");
             
             // Display type with fixed width
             Console.Write($"[{type,-6}] ");
@@ -155,7 +174,7 @@ public class ChatApplication
             if (!string.IsNullOrEmpty(provider.ModelId))
             {
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"    └─ Model: {provider.ModelId}");
+                Console.WriteLine($"    | Model: {provider.ModelId}");
                 Console.ResetColor();
             }
             
@@ -174,7 +193,7 @@ public class ChatApplication
                 input.Equals("/quit", StringComparison.OrdinalIgnoreCase) ||
                 input.Equals("/exit", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("Goodbye! 👋");
+                Console.WriteLine("Goodbye!");
                 break;
             }
             // Handle commands
@@ -204,7 +223,7 @@ public class ChatApplication
                     break;
                 case "/clear":
                     _chatService.ClearHistory();
-                    Console.WriteLine("✅ Chat history cleared.");
+                    Console.WriteLine("[OK] Chat history cleared.");
                     break;
                 case "/history":
                     DisplayChatHistory();
@@ -213,7 +232,7 @@ public class ChatApplication
                     DisplayWelcomeMessage();
                     break;
                 default:
-                    Console.WriteLine($"❌ Unknown command: {cmd}");
+                    Console.WriteLine($"[ERROR] Unknown command: {cmd}");
                     Console.WriteLine("Type /help to see available commands.");
                     break;
             }
@@ -221,24 +240,24 @@ public class ChatApplication
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error handling command: {Command}", command);
-            Console.WriteLine($"❌ Error executing command: {ex.Message}");
+            Console.WriteLine($"[ERROR] Error executing command: {ex.Message}");
         }
     }
     private async Task HandleSwitchCommand(string? providerId)
     {
         if (string.IsNullOrWhiteSpace(providerId))
         {
-            Console.WriteLine("❌ Please specify a provider ID. Example: /switch OpenAI");
+            Console.WriteLine("[ERROR] Please specify a provider ID. Example: /switch OpenAI");
             return;
         }
         try
         {
             await _chatService.SwitchProviderAsync(providerId);
-            Console.WriteLine($"✅ Switched to provider: {providerId}");
+            Console.WriteLine($"[OK] Switched to provider: {providerId}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Failed to switch to provider '{providerId}': {ex.Message}");
+            Console.WriteLine($"[ERROR] Failed to switch to provider '{providerId}': {ex.Message}");
         }
     }
     private void DisplayChatHistory()
@@ -249,11 +268,11 @@ public class ChatApplication
             Console.WriteLine("No chat history available.");
             return;
         }
-        Console.WriteLine("\n📋 Chat History:");
+        Console.WriteLine("\n[HISTORY] Chat History:");
         Console.WriteLine("================");
         foreach (var message in history)
         {
-            var prefix = message.Role.Equals("user", StringComparison.OrdinalIgnoreCase) ? "👤 You" : "🤖 Assistant";
+            var prefix = message.Role.Equals("user", StringComparison.OrdinalIgnoreCase) ? "[USER] You" : "[AI] Assistant";
             Console.WriteLine($"{prefix}: {message.Content}");
             Console.WriteLine();
         }
@@ -267,14 +286,14 @@ public class ChatApplication
             // Display token usage if available
             if (tokenUsage != null)
             {
-                Console.WriteLine($"\n📊 Token Usage: {tokenUsage}");
+                Console.WriteLine($"\n[STATS] Token Usage: {tokenUsage}");
             }
             Console.WriteLine(); // Add spacing after response
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing chat message");
-            Console.WriteLine($"❌ Error: {ex.Message}");
+            Console.WriteLine($"[ERROR] Error: {ex.Message}");
         }
     }
     private async Task<Models.TokenUsage?> ProcessStreamingResponseAsync(string message)
