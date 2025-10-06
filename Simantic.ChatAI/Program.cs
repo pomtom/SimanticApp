@@ -110,21 +110,56 @@ public class ChatApplication
         var providers = _chatService.GetAvailableProviders().ToList();
         if (!providers.Any())
         {
-            Console.WriteLine("⚠️  No providers are currently configured and available.");
+            Console.WriteLine("[WARNING] No providers are currently configured and available.");
             return;
         }
-        Console.WriteLine("Available Providers:");
-        Console.WriteLine("-------------------");
+        Console.WriteLine("\nAvailable Providers:");
+        Console.WriteLine("====================");
+        
         foreach (var provider in providers)
         {
-            var status = provider.IsAvailable ? "✅ Available" : "❌ Not Available";
-            var type = provider.IsOnline ? "Online" : "Local";
-            var current = provider.Id.Equals(_chatService.CurrentProvider, StringComparison.OrdinalIgnoreCase) ? " (Current)" : "";
-            Console.WriteLine($"  {provider.DisplayName} ({provider.Id}) - {type} - {status}{current}");
+            var type = provider.IsOnline ? "Online" : "Local ";
+            var current = provider.Id.Equals(_chatService.CurrentProvider, StringComparison.OrdinalIgnoreCase) ? " <- CURRENT" : "";
+            
+            // Display provider name and ID with padding
+            Console.Write($"  • {provider.DisplayName,-20} ({provider.Id,-15}) ");
+            
+            // Display type with fixed width
+            Console.Write($"[{type,-6}] ");
+            
+            // Color only the status text
+            Console.Write("Status: ");
+            if (provider.IsAvailable)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("Available");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("Not Available");
+            }
+            Console.ResetColor();
+            
+            // Add current indicator in yellow
+            if (!string.IsNullOrEmpty(current))
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write(current);
+                Console.ResetColor();
+            }
+            
+            Console.WriteLine();
+            
+            // Display model info with proper indentation
             if (!string.IsNullOrEmpty(provider.ModelId))
             {
-                Console.WriteLine($"    Model: {provider.ModelId}");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"    └─ Model: {provider.ModelId}");
+                Console.ResetColor();
             }
+            
+            Console.WriteLine(); // Add spacing between providers
         }
         Console.WriteLine();
     }
