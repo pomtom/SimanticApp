@@ -18,6 +18,7 @@ public interface IChatService : IDisposable
     void ClearHistory();
     IReadOnlyList<ChatMessage> GetHistory();
     IEnumerable<ProviderInfo> GetAvailableProviders();
+    IChatCompletionService? GetCurrentChatCompletionService();
 }
 public interface IConfigurationService
 {

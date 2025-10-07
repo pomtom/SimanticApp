@@ -113,10 +113,12 @@ public class ChatApplication
         Console.WriteLine("================================================================");
         Console.WriteLine();
         Console.WriteLine($"Current Provider: {_chatService.CurrentProvider}");
+        DisplayCurrentModelInfo();
         Console.WriteLine();
         Console.WriteLine("Available Commands:");
         Console.WriteLine("  /switch <provider>  - Switch to a different provider");
         Console.WriteLine("  /providers          - List available providers");
+        Console.WriteLine("  /model              - Show current model information");
         Console.WriteLine("  /clear              - Clear chat history");
         Console.WriteLine("  /history            - Show chat history");
         Console.WriteLine("  /help               - Show this help message");
@@ -182,6 +184,41 @@ public class ChatApplication
         }
         Console.WriteLine();
     }
+    
+    private void DisplayCurrentModelInfo()
+    {
+        try
+        {
+            // Get the current chat completion service
+            var currentService = _chatService.GetCurrentChatCompletionService();
+            if (currentService != null)
+            {
+                Console.WriteLine("\nCurrent Model Information:");
+                Console.WriteLine("-------------------------");
+                
+                // Display model and service information
+                foreach (var attr in currentService.Attributes)
+                {
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.Write($"{attr.Key,-20}");
+                    Console.ResetColor();
+                    Console.WriteLine($" : {attr.Value}");
+                }
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n[INFO] No active model connection found.");
+                Console.ResetColor();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\n[ERROR] Failed to get current model info: {ex.Message}");
+            Console.ResetColor();
+        }
+    }
     private async Task RunChatLoopAsync()
     {
         while (true)
@@ -221,6 +258,9 @@ public class ChatApplication
                 case "/providers":
                     DisplayAvailableProviders();
                     break;
+                case "/model":
+                    DisplayCurrentModelInfo();
+                    break;
                 case "/clear":
                     _chatService.ClearHistory();
                     Console.WriteLine("[OK] Chat history cleared.");
@@ -254,6 +294,7 @@ public class ChatApplication
         {
             await _chatService.SwitchProviderAsync(providerId);
             Console.WriteLine($"[OK] Switched to provider: {providerId}");
+            DisplayCurrentModelInfo();
         }
         catch (Exception ex)
         {

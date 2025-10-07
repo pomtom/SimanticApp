@@ -183,6 +183,11 @@ public class ChatService : IChatService
     {
         return _providerFactory.GetAvailableProviders();
     }
+    
+    public IChatCompletionService? GetCurrentChatCompletionService()
+    {
+        return _currentService;
+    }
     private async Task<IChatCompletionService> EnsureServiceAsync()
     {
         if (_currentService == null)
