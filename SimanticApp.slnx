@@ -8,5 +8,6 @@
   <Project Path="LMStudio/LMStudio.csproj" Id="14815a1c-e68a-4f67-b8ae-1cd31ad41727" />
   <Project Path="Ollama/Ollama.csproj" Id="f8430ae8-e8d5-481c-90db-76e88f356c0c" />
   <Project Path="OPenAIApp/OpenAIApp.csproj" Id="c3438417-ccd1-4395-9003-4f72499dd688" />
-  <Project Path="Simantic.ChatAI/Simantic.ChatAI.csproj" Id="unified-llm-provider" />
+  <Project Path="Simantic.ChatAI/Simantic.ChatAI.csproj" />
+  <Project Path="Simantic.MultiModel/Simantic.MultiModel.csproj" Id="7c27267b-2f47-4bf6-ab3c-2412b1dbb4cc" />
 </Solution>
