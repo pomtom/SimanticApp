@@ -1,0 +1,227 @@
+﻿@page "/"
+@using Semantic.WebApp.Models
+@using Semantic.WebApp.Services
+@using Microsoft.SemanticKernel.ChatCompletion
+@inject IChatService ChatService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Semantic WebApp - AI Assistant</PageTitle>
+
+<div class="container-fluid h-100">
+    <div class="row h-100">
+        <div class="col-12">
+            <div class="card h-100 shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h1 class="h4 mb-0">
+                                <i class="fas fa-robot me-2"></i>
+                                Semantic WebApp - AI Assistant
+                            </h1>
+                            <small class="opacity-75">Your friendly AI companion powered by Semantic Kernel</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-light btn-sm" @onclick="ClearChat" disabled="@_isProcessing">
+                                <i class="fas fa-trash me-1"></i>
+                                Clear Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body d-flex flex-column p-0">
+                    <!-- Chat History -->
+                    <div class="flex-grow-1 overflow-auto p-3" style="min-height: 400px;" id="chatContainer">
+                        @if (_chatModel.ChatHistory.Count <= 1)
+                        {
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-comments fa-3x mb-3"></i>
+                                <h5>Welcome to Semantic WebApp!</h5>
+                                <p class="mb-0">Start a conversation by typing your message below.</p>
+                                <small class="text-muted">
+                                    I can help you with weather information, get current time, 
+                                    geocode addresses, and answer general questions.
+                                </small>
+                            </div>
+                        }
+                        else
+                        {
+                            @for (int i = 1; i < _chatModel.ChatHistory.Count; i++)
+                            {
+                                var message = _chatModel.ChatHistory[i];
+                                if (message.Role == AuthorRole.User)
+                                {
+                                    <div class="d-flex justify-content-end mb-3">
+                                        <div class="card bg-primary text-white" style="max-width: 70%;">
+                                            <div class="card-body py-2 px-3">
+                                                <div class="d-flex align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <div style="white-space: pre-wrap;">@message.Content</div>
+                                                    </div>
+                                                    <i class="fas fa-user ms-2 mt-1"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else if (message.Role == AuthorRole.Assistant)
+                                {
+                                    <div class="d-flex justify-content-start mb-3">
+                                        <div class="card bg-light" style="max-width: 70%;">
+                                            <div class="card-body py-2 px-3">
+                                                <div class="d-flex align-items-start">
+                                                    <i class="fas fa-robot me-2 mt-1 text-primary"></i>
+                                                    <div class="flex-grow-1">
+                                                        <div class="markdown-content">
+                                                            @((MarkupString)ConvertMarkdownToHtml(message.Content ?? ""))
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        }
+                        
+                        @if (_isProcessing)
+                        {
+                            <div class="d-flex justify-content-start mb-3">
+                                <div class="card bg-light" style="max-width: 70%;">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-robot me-2 text-primary"></i>
+                                            <div class="flex-grow-1">
+                                                <div class="typing-indicator">
+                                                    <span class="dot"></span>
+                                                    <span class="dot"></span>
+                                                    <span class="dot"></span>
+                                                </div>
+                                                <small class="text-muted">AI is thinking...</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    <!-- Input Area -->
+                    <div class="border-top p-3 bg-light">
+                        <EditForm Model="_chatModel" OnValidSubmit="SendMessage">
+                            <DataAnnotationsValidator />
+                            <div class="row g-2">
+                                <div class="col">
+                                    <InputTextArea @bind-Value="_chatModel.Prompt" 
+                                                  class="form-control" 
+                                                  rows="2" 
+                                                  placeholder="Type your message here..." 
+                                                  disabled="@_isProcessing"
+                                                  @onkeypress="HandleKeyPress" />
+                                    <ValidationMessage For="@(() => _chatModel.Prompt)" class="text-danger small" />
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" 
+                                            class="btn btn-primary btn-lg h-100" 
+                                            disabled="@(_isProcessing || string.IsNullOrWhiteSpace(_chatModel.Prompt))">
+                                        @if (_isProcessing)
+                                        {
+                                            <i class="fas fa-spinner fa-spin me-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-paper-plane me-1"></i>
+                                        }
+                                        Send
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Press Ctrl+Enter to send your message
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ChatModel _chatModel = new();
+    private bool _isProcessing = false;
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_chatModel.Prompt) || _isProcessing)
+            return;
+
+        _isProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            await ChatService.GetResponseAsync(_chatModel);
+            _chatModel.Prompt = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            // Add error message to chat
+            _chatModel.ChatHistory.AddAssistantMessage($"I'm sorry, I encountered an error: {ex.Message}");
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+
+        // Scroll to bottom
+        await ScrollToBottom();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && e.CtrlKey && !_isProcessing)
+        {
+            await SendMessage();
+        }
+    }
+
+    private void ClearChat()
+    {
+        _chatModel = new ChatModel();
+        StateHasChanged();
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await Task.Delay(100); // Give the DOM time to update
+            await JSRuntime.InvokeVoidAsync("scrollToBottom", "chatContainer");
+        }
+        catch
+        {
+            // Ignore JS interop errors in case JS is not available
+        }
+    }
+
+    private string ConvertMarkdownToHtml(string markdown)
+    {
+        if (string.IsNullOrEmpty(markdown))
+            return string.Empty;
+
+        // Simple markdown to HTML conversion (you can enhance this)
+        var html = markdown
+            .Replace("**", "<strong>", StringComparison.OrdinalIgnoreCase)
+            .Replace("**", "</strong>", StringComparison.OrdinalIgnoreCase)
+            .Replace("*", "<em>")
+            .Replace("*", "</em>")
+            .Replace("\n", "<br/>")
+            .Replace("```", "<pre><code>")
+            .Replace("```", "</code></pre>");
+
+        return html;
+    }
+}
